@@ -21,6 +21,12 @@ import kotlin.time.Duration.Companion.milliseconds
 actual fun microphone(): AudioSource = IosMicrophone()
 
 private class IosMicrophone : AudioSource {
+    /**
+     * Apple publishes no figure, and an iPhone's input runs hotter than Android's: loud speech
+     * at arm's length, about 85 dB SPL, reads near -12 dBFS. Tune against a reference meter.
+     */
+    override val fullScaleDecibels = 100f
+
     @OptIn(ExperimentalForeignApi::class)
     override fun levels(): Flow<Float> = flow {
         val session = AVAudioSession.sharedInstance()

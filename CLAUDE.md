@@ -72,7 +72,8 @@ wired by hand in `di/AppContainer.kt` and nowhere else. Each platform creates on
 - The microphone permission is the one platform concern the UI owns
   (`ui/permission/MicrophonePermission.kt`), because asking needs an Activity on Android.
 - Readings are approximate. Phones are not calibrated, so `MicrophoneNoiseRepository` adds one
-  fixed offset to the signal level to estimate dB SPL.
+  fixed offset to the signal level to estimate dB SPL. The offset is per platform
+  (`AudioSource.fullScaleDecibels`), because each applies its own gain to the microphone.
 
 ## Build
 

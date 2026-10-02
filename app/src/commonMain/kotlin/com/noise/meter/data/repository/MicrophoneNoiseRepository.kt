@@ -9,15 +9,7 @@ import kotlinx.coroutines.flow.map
 class MicrophoneNoiseRepository(private val audioSource: AudioSource) : NoiseRepository {
     override fun observe(): Flow<NoiseLevel> =
         audioSource.levels().map { dbfs ->
-            NoiseLevel((dbfs + FullScaleDecibels).coerceIn(NoiseLevel.Range))
+            // No phone is calibrated, so this is a good estimate, not a measurement.
+            NoiseLevel((dbfs + audioSource.fullScaleDecibels).coerceIn(NoiseLevel.Range))
         }
-
-    private companion object {
-        /**
-         * The sound pressure taken to drive a phone microphone to full scale. Android asks
-         * manufacturers for 90 dB SPL to read about -22 dBFS; no phone is calibrated beyond that,
-         * so readings are a good estimate, not a measurement.
-         */
-        const val FullScaleDecibels = 112f
-    }
 }

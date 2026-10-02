@@ -29,5 +29,7 @@ class MicrophoneNoiseRepositoryTest {
 }
 
 private class FakeAudioSource(private vararg val levels: Float) : AudioSource {
+    override val fullScaleDecibels = 112f
+
     override fun levels(): Flow<Float> = flowOf(*levels.toTypedArray())
 }
