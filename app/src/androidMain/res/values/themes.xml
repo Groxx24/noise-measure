@@ -1,0 +1,6 @@
+<resources>
+    <!-- The UI is drawn entirely in Compose; this only styles the window before first frame. -->
+    <style name="Theme.NoiseMeter" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

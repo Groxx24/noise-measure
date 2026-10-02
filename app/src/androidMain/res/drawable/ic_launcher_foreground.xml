@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Five level bars going from calm teal to loud red, inside the 66-unit safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#FF2DD4BF" android:pathData="M31,60h6v14h-6z" />
+    <path android:fillColor="#FFA3E635" android:pathData="M41,50h6v24h-6z" />
+    <path android:fillColor="#FFFBBF24" android:pathData="M51,34h6v40h-6z" />
+    <path android:fillColor="#FFFB923C" android:pathData="M61,44h6v30h-6z" />
+    <path android:fillColor="#FFF43F5E" android:pathData="M71,54h6v20h-6z" />
+</vector>
