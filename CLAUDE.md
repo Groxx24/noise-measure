@@ -35,7 +35,7 @@ Android, Compose or any platform audio API.
 | ViewModel | `ui/<feature>/` | Holds one immutable `UiState` as `StateFlow`, turns UI events into use-case calls. Talks only to use cases. |
 | Use case | `domain/usecase/` | One business action per class, exposed as `operator fun invoke`. Talks only to repository interfaces. |
 | Repository | interface in `domain/repository/`, implementation in `data/repository/` | The single source of truth for a kind of data. Maps raw data-source values to domain models. |
-| Data source | `data/audio/` | `AudioSource` and the per-platform microphone behind it. |
+| Data source | `data/audio/`, `data/record/` | `AudioSource` and the per-platform microphone behind it; `RecordStore` and the per-platform storage behind it. |
 
 Rules that follow from this:
 
@@ -60,7 +60,8 @@ Rules that follow from this:
 Not decided yet: dependency injection, navigation, persistence, a permissions library, and
 anything else. Do not add a library for these without asking first. Until then, dependencies are
 wired by hand in `di/AppContainer.kt` and nowhere else. Each platform creates one container
-(`NoiseMeterApplication`, `MainViewController`) and routes build their ViewModel from it with
+(`NoiseMeterApplication`, `MainViewController`), passing in the few dependencies that need a
+platform object to build (the `RecordStore`), and routes build their ViewModel from it with
 `viewModel { … }`.
 
 ## Microphone
@@ -69,8 +70,10 @@ wired by hand in `di/AppContainer.kt` and nowhere else. Each platform creates on
   `NoiseViewModel.uiState` is collected. The app opens stopped. `NoiseRoute` collects the state
   only once the permission is granted, and `collectAsStateWithLifecycle` stops it when the app
   goes to the background. Keep it that way: never record without a visible meter.
-- The record (loudest reading) lives in `NoiseViewModel`, so it lasts until the app is closed.
-- Nothing is recorded or stored; each buffer is reduced to one level and dropped.
+- The record (loudest reading) is the only thing saved, as one number, and it is kept between
+  launches. No persistence library is chosen: `RecordStore` (`data/record/`) is implemented with
+  `SharedPreferences` on Android and `NSUserDefaults` on iOS.
+- No audio is recorded or stored; each buffer is reduced to one level and dropped.
 - The microphone permission is the one platform concern the UI owns
   (`ui/permission/MicrophonePermission.kt`), because asking needs an Activity on Android.
 - Readings are approximate. Phones are not calibrated, so `MicrophoneNoiseRepository` adds one

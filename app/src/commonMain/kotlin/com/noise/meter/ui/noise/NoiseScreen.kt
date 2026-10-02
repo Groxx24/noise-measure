@@ -72,7 +72,13 @@ fun NoiseRoute(container: AppContainer, modifier: Modifier = Modifier) {
     val permission = rememberMicrophonePermission()
     if (permission.isGranted) {
         // The state is collected only here, so the microphone stays off until it is allowed.
-        val viewModel = viewModel { NoiseViewModel(container.observeNoiseLevel) }
+        val viewModel = viewModel {
+            NoiseViewModel(
+                container.observeNoiseLevel,
+                container.observeNoiseRecord,
+                container.updateNoiseRecord,
+            )
+        }
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         NoiseScreen(
             state = state,
