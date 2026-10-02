@@ -7,10 +7,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,10 +51,14 @@ import com.noise.meter.resources.band_harmful
 import com.noise.meter.resources.band_loud
 import com.noise.meter.resources.band_moderate
 import com.noise.meter.resources.band_quiet
+import com.noise.meter.resources.measuring_start
+import com.noise.meter.resources.measuring_stop
 import com.noise.meter.resources.microphone_unavailable
 import com.noise.meter.resources.permission_allow
 import com.noise.meter.resources.permission_body
 import com.noise.meter.resources.permission_title
+import com.noise.meter.resources.record_label
+import com.noise.meter.resources.record_value
 import com.noise.meter.resources.unit_db
 import com.noise.meter.ui.permission.rememberMicrophonePermission
 import com.noise.meter.ui.theme.Backdrop
@@ -64,7 +74,11 @@ fun NoiseRoute(container: AppContainer, modifier: Modifier = Modifier) {
         // The state is collected only here, so the microphone stays off until it is allowed.
         val viewModel = viewModel { NoiseViewModel(container.observeNoiseLevel) }
         val state by viewModel.uiState.collectAsStateWithLifecycle()
-        NoiseScreen(state = state, modifier = modifier)
+        NoiseScreen(
+            state = state,
+            onMeasuringChange = viewModel::setMeasuring,
+            modifier = modifier,
+        )
     } else {
         // Ask once without waiting for a tap; the button is for when that was turned down.
         var hasAsked by rememberSaveable { mutableStateOf(false) }
@@ -80,7 +94,11 @@ fun NoiseRoute(container: AppContainer, modifier: Modifier = Modifier) {
 
 /** The whole screen is the meter: a bar that fills it from the bottom, coloured by how loud it is. */
 @Composable
-fun NoiseScreen(state: NoiseUiState, modifier: Modifier = Modifier) {
+fun NoiseScreen(
+    state: NoiseUiState,
+    onMeasuringChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     // A soft spring lets the bar overshoot and settle, so every jump in noise lands with a bump.
     val level = animateFloatAsState(
         targetValue = state.level,
@@ -92,13 +110,36 @@ fun NoiseScreen(state: NoiseUiState, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxSize()
             // Read in the draw phase, so the animation repaints without recomposing the screen.
-            .drawBehind { drawMeter(level.value) },
-        contentAlignment = Alignment.Center,
+            .drawBehind { drawMeter(level.value) }
+            .safeDrawingPadding()
+            .padding(24.dp),
     ) {
-        if (state.isMicrophoneAvailable) {
-            Readout(decibels = state.decibels, band = state.band)
+        state.recordDecibels?.let { Record(decibels = it, modifier = Modifier.align(Alignment.TopEnd)) }
+        if (state.isMeasuring) {
+            Box(modifier = Modifier.align(Alignment.Center)) {
+                Readout(decibels = state.decibels, band = state.band)
+            }
+            StopButton(
+                onClick = { onMeasuringChange(false) },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         } else {
-            Message(stringResource(Res.string.microphone_unavailable))
+            // Equal weights above and below keep the button in the exact middle of the screen.
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier.weight(1f).padding(bottom = 16.dp),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    if (!state.isMicrophoneAvailable) {
+                        Message(stringResource(Res.string.microphone_unavailable))
+                    }
+                }
+                StartButton(onClick = { onMeasuringChange(true) })
+                Spacer(modifier = Modifier.weight(1f))
+            }
         }
     }
 }
@@ -143,6 +184,58 @@ private fun Readout(decibels: Int, band: NoiseBand) {
         )
     }
 }
+
+/** The loudest reading so far. */
+@Composable
+private fun Record(decibels: Int, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.End) {
+        Text(
+            text = stringResource(Res.string.record_label),
+            style = ReadoutStyle.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+        )
+        Text(
+            text = stringResource(Res.string.record_value, decibels),
+            style = ReadoutStyle.copy(fontSize = 28.sp),
+        )
+    }
+}
+
+/** Big and round in the middle of the screen: while stopped it is all there is to do. */
+@Composable
+private fun StartButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.size(176.dp),
+        shape = CircleShape,
+        colors = MeterButtonColors,
+    ) {
+        Text(
+            text = stringResource(Res.string.measuring_start),
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        )
+    }
+}
+
+@Composable
+private fun StopButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.defaultMinSize(minWidth = 160.dp, minHeight = 56.dp),
+        colors = MeterButtonColors,
+    ) {
+        Text(
+            text = stringResource(Res.string.measuring_stop),
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
+}
+
+/** White stays readable over every colour the bar takes. */
+private val MeterButtonColors: ButtonColors
+    @Composable get() = ButtonDefaults.buttonColors(
+        containerColor = MaterialTheme.colorScheme.onBackground,
+        contentColor = MaterialTheme.colorScheme.background,
+    )
 
 private val NoiseBand.label: StringResource
     get() = when (this) {
@@ -196,6 +289,15 @@ private fun Message(text: String) {
 @Composable
 private fun NoiseScreenPreview() {
     NoiseMeterTheme {
-        NoiseScreen(NoiseUiState(decibels = 72, band = NoiseBand.Loud, level = 0.6f))
+        NoiseScreen(
+            state = NoiseUiState(
+                isMeasuring = true,
+                decibels = 72,
+                band = NoiseBand.Loud,
+                level = 0.6f,
+                recordDecibels = 94,
+            ),
+            onMeasuringChange = {},
+        )
     }
 }

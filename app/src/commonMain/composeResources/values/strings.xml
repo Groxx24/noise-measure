@@ -4,6 +4,10 @@
     <string name="band_moderate">Moderate</string>
     <string name="band_loud">Loud</string>
     <string name="band_harmful">Harmful</string>
+    <string name="measuring_start">Start</string>
+    <string name="measuring_stop">Stop</string>
+    <string name="record_label">Record</string>
+    <string name="record_value">%1$d dB</string>
     <string name="permission_title">Microphone needed</string>
     <string name="permission_body">Noise Meter listens through the microphone to show how loud it is around you. Nothing is recorded or stored.</string>
     <string name="permission_allow">Allow microphone</string>

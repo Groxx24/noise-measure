@@ -65,9 +65,11 @@ wired by hand in `di/AppContainer.kt` and nowhere else. Each platform creates on
 
 ## Microphone
 
-- The microphone is on only while `NoiseViewModel.uiState` is collected. `NoiseRoute` collects it
+- The microphone is on only after the user taps Start (`NoiseViewModel.setMeasuring`) and while
+  `NoiseViewModel.uiState` is collected. The app opens stopped. `NoiseRoute` collects the state
   only once the permission is granted, and `collectAsStateWithLifecycle` stops it when the app
   goes to the background. Keep it that way: never record without a visible meter.
+- The record (loudest reading) lives in `NoiseViewModel`, so it lasts until the app is closed.
 - Nothing is recorded or stored; each buffer is reduced to one level and dropped.
 - The microphone permission is the one platform concern the UI owns
   (`ui/permission/MicrophonePermission.kt`), because asking needs an Activity on Android.
